@@ -1,0 +1,7 @@
+- slice sampling verstehen und zu elliptical vergleichen
+- pseudo-code umsetzen und zeigen, dass es läuft
+- ellipsen-bilder erzeugen
+- computational time
+
+- optional: line slice 
+- code runterladen...
