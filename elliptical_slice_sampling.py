@@ -69,7 +69,6 @@ def main():
     plt.plot(r, norm.pdf(r, mu, sigma))
     plt.grid()
     plt.show()
-    t = 12
 
 
 if __name__ == "__main__":
