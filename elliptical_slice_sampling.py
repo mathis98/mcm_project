@@ -1,8 +1,12 @@
 
+"""
+Script for Elliptical Slice Sampling
+"""
+
+# Import
 from os import fpathconf
 import numpy as np
 from numpy.core.fromnumeric import mean
-
 
 class EllipticalSliceSampler:
     def __init__(self, mean, covariance, log_likelihood_func):
@@ -65,7 +69,8 @@ def main():
 
     r = np.linspace(0., 8., num=100)
     plt.figure(figsize=(17, 6))
-    plt.hist(samples, bins=30, normed=True)
+    #plt.hist(samples, bins=30, normed = true)
+    plt.hist(samples, bins=30)
     plt.plot(r, norm.pdf(r, mu, sigma))
     plt.grid()
     plt.show()
@@ -73,3 +78,6 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+__author__ = 'Viking Penguin'
+__source__ = 'https://www.youtube.com/watch?v=HfzyuD9_gmk&t=448s'
