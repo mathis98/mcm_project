@@ -1,11 +1,12 @@
-
 """
 Script for Elliptical Slice Sampling
 """
 
 # Import
 from os import fpathconf
+import faulthandler
 import numpy as np
+from scipy.stats import norm
 from numpy.core.fromnumeric import mean
 
 class EllipticalSliceSampler:
@@ -13,6 +14,7 @@ class EllipticalSliceSampler:
         self.mean = mean
         self.covariance = covariance
         self.function_likelihood_log = log_likelihood_func
+        faulthandler.enable()
 
     def __sample(self, f):
         #nu = np.random.multivariant_normal(self.mean, self.covariance)
@@ -69,9 +71,12 @@ def main():
 
     r = np.linspace(0., 8., num=100)
     plt.figure(figsize=(17, 6))
-    #plt.hist(samples, bins=30, normed = true)
-    plt.hist(samples, bins=30)
-    plt.plot(r, norm.pdf(r, mu, sigma))
+    plt.hist(samples, bins=30, color='b', density=True, alpha=0.6)
+    # plt.plot(r, norm.pdf(r, mu, sigma))
+    xmin, xmax = plt.xlim()
+    x = np.linspace(xmin,xmax, 100)
+    p = norm.pdf(x, mu, sigma)
+    plt.plot(x, p, 'k', linewidth=2)
     plt.grid()
     plt.show()
 
