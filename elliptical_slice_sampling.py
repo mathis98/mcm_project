@@ -8,6 +8,7 @@ import faulthandler
 import numpy as np
 from scipy.stats import norm
 from numpy.core.fromnumeric import mean
+import matplotlib.pyplot as plt
 
 class EllipticalSliceSampler:
     def __init__(self, mean, covariance, log_likelihood_func):
@@ -26,6 +27,23 @@ class EllipticalSliceSampler:
 
         while True:
             fp = (f - self.mean)*np.cos(theta) + nu*np.sin(theta) + self.mean
+
+            a = np.linspace(0, 2*np.pi, num=1000)
+            x = [(f-self.mean)*np.cos(i) for i in a]
+            y = [nu * np.sin(i) + self.mean for i in a]
+
+            slice = np.linspace(theta_min,theta_max, num=1000)
+            x_slice = [(f-self.mean)*np.cos(i) for i in slice]
+            y_slice = [nu * np.sin(i) + self.mean for i in slice]
+
+            fp_x = (f - self.mean)*np.cos(theta)
+            fp_y = nu*np.sin(theta) + self.mean
+
+            plt.scatter(fp_x, fp_y, color='r', zorder=2, marker='x')
+            plt.scatter(x,y, zorder=0, color='k')
+            plt.scatter(x_slice, y_slice,color='g',zorder=1)
+            plt.show()
+
             log_fp = self.function_likelihood_log(fp)
             if log_fp > log_y:
                 return fp
@@ -49,7 +67,6 @@ class EllipticalSliceSampler:
 
 def main():
     import numpy as np
-    import matplotlib.pyplot as plt
     from scipy.stats import norm
     np.random.seed(0)
 
