@@ -39,7 +39,7 @@ class EllipticalSliceSampler:
             fp_x = (f - self.mean)*np.cos(theta)
             fp_y = nu*np.sin(theta) + self.mean
 
-            plt.scatter(fp_x, fp_y, color='r', zorder=2, marker='x')
+            plt.scatter(fp_x, fp_y, color='r', zorder=2, marker='x', s=100)
             plt.scatter(x,y, zorder=0, color='k')
             plt.scatter(x_slice, y_slice,color='g',zorder=1)
             plt.show()
