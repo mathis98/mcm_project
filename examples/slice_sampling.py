@@ -83,10 +83,10 @@ class SliceSampler:
         sample = [0, 0]
         sample_found = False
         while not sample_found:
-            x_sample = np.random.uniform(w_range[0], w_range[1])
-            if y_value < sampler.p(x_sample, mu, sigma):
+            x_proposal = np.random.uniform(w_range[0], w_range[1])
+            if y_value < sampler.p(x_proposal, mu, sigma):
                 sample_found = True
-                sample[0] = x_sample
+                sample[0] = x_proposal
                 sample[1] = y_value
 
         return sample
