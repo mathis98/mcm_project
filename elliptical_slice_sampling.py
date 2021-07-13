@@ -39,12 +39,19 @@ class EllipticalSliceSampler:
             x_slice = [(f-self.mean)*np.cos(i) for i in slice]
             y_slice = [nu * np.sin(i) + self.mean for i in slice]
 
+            xy = zip(x,y)
+            xy = [a for a in xy if self.function_likelihood_log(a[0]+a[1]) > log_y]
+
             fp_x = (f - self.mean)*np.cos(theta)
             fp_y = nu*np.sin(theta) + self.mean
 
+            print(number)
+
             plt.scatter(fp_x, fp_y, color='r', zorder=2, marker='x', s=100)
             plt.scatter(x,y, zorder=0, color='k')
-            plt.scatter(x_slice, y_slice,color='g',zorder=1)
+            # plt.scatter(x_slice, y_slice,color='g',zorder=1)
+            for bracket_point in xy:
+                plt.scatter(bracket_point[0], bracket_point[1],color='g',zorder=1)
             plt.title('sample '+str(number))
             plt.savefig('./gif/'+str(number)+'_'+str(run)+'.png')
             # plt.show()
