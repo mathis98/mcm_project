@@ -207,4 +207,4 @@ print('Standard Deviation of Samples: {}'.format(samples_std))
 print('Standard Deviation of Target: {}'.format(target_std))
 print('Standard Error: {}'.format((samples_std/samples_n)**0.5))
 
-__source__ = 'https://wiseodd.github.io/techblog/2015/10/24/slice-sampling/'
+__source__ = ''
