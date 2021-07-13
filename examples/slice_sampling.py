@@ -1,7 +1,11 @@
 """
-Slice Sampling
+Script for Slice Sampling
 """
 
+# TODO: Move Elliptical Slice Sampling to Our Scheme
+# TODO: Add Hastings to Metropolis Hastings
+# TODO: Internal Rejection Rate
+# TODO: Computation Time
 # TODO: Add 2d Case
 
 # Imports
@@ -167,6 +171,8 @@ class SliceSampler:
 
         return samples
 
+
+# Run Sampler
 samples_n = 1000
 mu = [15, 20]
 sigma = [1, 3]
