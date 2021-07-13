@@ -92,7 +92,7 @@ class SliceSampler:
         return sample
 
 
-    def sample_1d(self, samples_n, plot = False):
+    def samples(self, samples_n, plot = False):
         """
         Creates n samples in 1d
         :return: sample
@@ -181,7 +181,7 @@ w_length = 0.5
 seed = 0
 
 sampler = SliceSampler(mu, sigma, x_range, w_length, seed)
-samples = sampler.sample_1d(samples_n, plot=True)
+samples = sampler.samples(samples_n, plot=False)
 
 # Plot End Result
 x = np.linspace(x_range[0], x_range[1], 1000)
