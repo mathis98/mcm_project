@@ -167,10 +167,10 @@ class SliceSampler:
 
         return samples
 
-samples_n = 10000
+samples_n = 1000
 mu = [15, 20]
 sigma = [1, 3]
-x_range = [0, 50]
+x_range = [5, 35]
 w_length = 0.5
 seed = 0
 
@@ -188,7 +188,11 @@ target_distribution_norm = [float(i)/sum(target_distribution) for i in target_di
 plt.figure(figsize=(17, 6))
 plt.hist(samples[:, 0], bins=30, color='b', density=True, alpha=0.6)
 plt.plot(x, target_distribution, '-r', linewidth=2)
-plt.grid()
+plt.title("Slice Sampling", fontsize=16)
+plt.xlim(x_range)
+plt.ylim([-0.1, 0.75])
+plt.xlabel("X")
+plt.ylabel("Y")
 plt.show()
 
 # Momentums
