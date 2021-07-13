@@ -35,7 +35,7 @@ class SliceSampler:
 
     def p(self, x, mu, sigma):
         """
-        Target Distribution
+        Defines a 1D Target Distribution
         :param x: x value
         :param mu: List of Expected Values
         :param sigma: List of Standard Deviations
@@ -52,12 +52,15 @@ class SliceSampler:
         Creates n samples in 1d
         :return: sample
         """
+
+        # Create Target Distribution
         x_vector = np.linspace(self.x_range[0], self.x_range[1], 1000)
 
         target_distribution = np.zeros(len(x_vector))
         for idx, val in enumerate(x_vector):
             target_distribution[idx] = sampler.p(val, self.mu, self.sigma)
 
+        # Create Samples
         samples = np.empty([samples_n, 2])
 
         if plot:
@@ -75,8 +78,8 @@ class SliceSampler:
             plt.xlabel("X")
             plt.ylabel("Y")
 
-        # Get random x (Slice)
-        x_value = np.random.uniform(self.x_range[0], self.x_range[1])
+        # Create Samples
+        x_value = np.random.uniform(self.x_range[0], self.x_range[1])  # Random x (Slice) for first sample
         for i in range(samples_n):
             # Get Y in [0 p(x)]
             y_range = [0, sampler.p(x_value, self.mu, self.sigma)]
