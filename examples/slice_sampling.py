@@ -16,7 +16,7 @@ import math
 
 
 class SliceSampler:
-    def __init__(self, mu=[1], sigma=[1], x_range=[-5, 5], step_size=2.5, seed=0):
+    def __init__(self, mu, sigma, x_range, step_size, seed):
         """
         Slice Sampler
         :param mu:
