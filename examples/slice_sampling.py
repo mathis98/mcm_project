@@ -47,6 +47,47 @@ class SliceSampler:
             p[idx] = st.norm.pdf(x, loc=mu_val, scale=sigma_val)
         return sum(p)
 
+    def sample(self, x_prior):
+        """
+        Creates a single Sample. x_value is the prior x
+        :param x_prior:
+        :return:
+        """
+
+        # Get Y in [0 p(x)]
+        y_range = [0, sampler.p(x_prior, self.mu, self.sigma)]
+        self.y_vector = np.linspace(y_range[0], y_range[1], 2)
+
+        # Get random y
+        y_value = np.random.uniform(y_range[0], y_range[1])
+
+        # Create Horizontal Line w with Step Size
+        w_length = self.step_size
+        w_lower_end = np.random.uniform(x_prior - w_length, x_prior)
+        w_range = [w_lower_end, w_lower_end + w_length]
+
+        # Extent w until a fitting step size is found / Adjust Step Size
+        while y_value < sampler.p(w_range[1], mu, sigma):  # To the right
+            w_range[1] += w_length
+
+        while y_value < sampler.p(w_range[0], mu, sigma):  # To the left
+            w_range[0] -= w_length
+
+        self.w_vector = np.linspace(w_range[0], w_range[1], 2)
+
+        # Sample value
+        sample = [0, 0]
+        sample_found = False
+        while not sample_found:
+            x_sample = np.random.uniform(w_range[0], w_range[1])
+            if y_value < sampler.p(x_sample, mu, sigma):
+                sample_found = True
+                sample[0] = x_sample
+                sample[1] = y_value
+
+        return sample
+
+
     def sample_1d(self, samples_n, plot = False):
         """
         Creates n samples in 1d
@@ -55,7 +96,6 @@ class SliceSampler:
 
         # Create Target Distribution
         x_vector = np.linspace(self.x_range[0], self.x_range[1], 1000)
-
         target_distribution = np.zeros(len(x_vector))
         for idx, val in enumerate(x_vector):
             target_distribution[idx] = sampler.p(val, self.mu, self.sigma)
@@ -81,40 +121,14 @@ class SliceSampler:
         # Create Samples
         x_value = np.random.uniform(self.x_range[0], self.x_range[1])  # Random x (Slice) for first sample
         for i in range(samples_n):
-            # Get Y in [0 p(x)]
-            y_range = [0, sampler.p(x_value, self.mu, self.sigma)]
-            y_vector = np.linspace(y_range[0], y_range[1], 2)
-
-            # Get random y
-            y_value = np.random.uniform(y_range[0], y_range[1])
-
-            # Create Horizontal Line w with Step Size
-            w_length = self.step_size
-            w_lower_end = np.random.uniform(x_value -  w_length, x_value)
-            w_range = [w_lower_end, w_lower_end +  w_length]
-            w_vector = np.linspace(w_range[0], w_range[1], 2)
-
-            # Extent w until a fitting step size is found / Adjust Step Size
-            while y_value < sampler.p(w_range[1], mu, sigma):  # To the right
-                w_range[1] +=  w_length
-
-            while y_value < sampler.p(w_range[0], mu, sigma):  # To the left
-                w_range[0] -=  w_length
-
-            w_vector = np.linspace(w_range[0], w_range[1], 2)
-
-            # Sample value
-            sample_found = False
-            while not sample_found:
-                x_sample = np.random.uniform(w_range[0], w_range[1])
-                if y_value < sampler.p(x_sample, mu, sigma):
-                    sample_found = True
-                    samples[i, 0] = x_sample
-                    samples[i, 1] = y_value
+            sample = sampler.sample(x_value)
+            samples[i, 0] = sample[0]
+            samples[i, 1] = sample[1]
 
             if plot:
                 # updating data values
                 timer = 0.001
+                y_value = sample[1]
                 line_distribution.set_xdata(x_vector)
                 line_distribution.set_ydata(target_distribution)
                 figure.canvas.flush_events()
@@ -123,16 +137,16 @@ class SliceSampler:
                 marker_x_value.set_ydata(0)
                 figure.canvas.flush_events()
                 time.sleep(timer)
-                line_y_vector.set_xdata([x_value] * len(y_vector))
-                line_y_vector.set_ydata(y_vector)
+                line_y_vector.set_xdata([x_value] * len(self.y_vector))
+                line_y_vector.set_ydata(self.y_vector)
                 figure.canvas.flush_events()
                 time.sleep(timer)
                 marker_y_value.set_xdata(x_value)
                 marker_y_value.set_ydata(y_value)
                 figure.canvas.flush_events()
                 time.sleep(timer)
-                line_w.set_xdata(w_vector)
-                line_w.set_ydata([y_value] * len(w_vector))
+                line_w.set_xdata(self.w_vector)
+                line_w.set_ydata([y_value] * len(self.w_vector))
                 figure.canvas.flush_events()
                 time.sleep(timer)
                 marker_samples.set_xdata(samples[:, 0])
@@ -149,7 +163,7 @@ class SliceSampler:
                 figure.canvas.flush_events()
                 time.sleep(timer)
 
-            x_value = x_sample
+            x_value = sample[0]
 
         return samples
 
