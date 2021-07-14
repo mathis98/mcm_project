@@ -1,8 +1,7 @@
 """
-Metropolis Hastings Sampling
+Script for Metropolis Hastings Sampling
 """
 
-# TODO: Add Hastings
 # TODO: Add 2d Case
 
 import numpy as np
@@ -50,6 +49,32 @@ class MetropolisHastingsSampler:
             p[idx] = st.norm.pdf(x, loc=mu_val, scale=sigma_val)
         return sum(p)
 
+    def q_norm(self, x_prior, sigma):
+        """
+        Defines a 1D Gaussian Proposal Distribution
+        :param x: x value
+        :param mu: List of Expected Values
+        :param sigma: List of Standard Deviations
+        :return:
+        """
+        x_proposal = np.random.normal(x_prior, sigma, 1)
+        q_ab = st.norm.pdf(x_proposal, x_prior, scale=sigma)
+        q_ba = st.norm.pdf(x_prior, x_proposal, scale=sigma)
+        return x_proposal, q_ab, q_ba
+
+    def q_gumbel_l(self, x_prior):
+        """
+        Defines a 1D Left Skewed Gumbel Proposal Distribution
+        :param x: x value
+        :param mu: List of Expected Values
+        :param sigma: List of Standard Deviations
+        :return:
+        """
+        x_proposal = np.random.gumbel(x_prior, 1, 1)
+        q_ab = st.gumbel_l.pdf(x_proposal, x_prior, scale=1)
+        q_ba = st.gumbel_l.pdf(x_prior, x_proposal, scale=1)
+        return x_proposal, q_ab, q_ba
+
     def sample(self, x_prior, y_prior):
         """
         Creates a single Sample. x_value is the prior x
@@ -63,9 +88,11 @@ class MetropolisHastingsSampler:
         sigma_total = np.sqrt((sigma[0] ** 2 * sigma[1] ** 2) / (sigma[0] ** 2 + sigma[1] ** 2))
 
         # Propose Sample
-        x_proposed = np.random.normal(x_prior, sigma_total, 1)  # This is symmetric, so metropolis
+        #x_proposed, q_ab, q_ba = sampler.q_norm(x_prior, sigma_total) # This is symmetric, so metropolis
+        x_proposed, q_ab, q_ba = sampler.q_gumbel_l(x_prior) # This is asymmetric, so metropolis-hastings
+
         #nu = np.random.normal(x_prior, sigma_total, 1)
-        #x_proposed = math.sqrt(1-(self.step_size**2))*x_prior + self.step_size * nu
+        #x_proposed = math.sqrt(1-(self.step_size**2))*x_prior + self.step_size * nu # TODO: Paper
 
         y_proposed = 0.0
 
@@ -78,10 +105,8 @@ class MetropolisHastingsSampler:
         logging.debug(('Probability Prior {}'.format(p_prior)))
         logging.debug(('Probability Proposed {}'.format(p_proposed)))
 
-        g_ab = 1. # TODO: Adjust here for Hastings
-        g_ba = 1.
         rf = p_proposed/p_prior
-        rg = g_ab/g_ba
+        rg = q_ab/q_ba
 
         acceptance_ratio = rf * rg
         acceptance_probability = min(1, acceptance_ratio)
