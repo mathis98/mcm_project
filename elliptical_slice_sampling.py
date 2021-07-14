@@ -29,30 +29,62 @@ class EllipticalSliceSampler:
         run = 0;
 
         while True:
+            # drawn sample
             fp = (f - self.mean)*np.cos(theta) + nu*np.sin(theta) + self.mean
+            fp_x = (f - self.mean)*np.cos(theta)
+            fp_y = nu*np.sin(theta) + self.mean
 
+            # all ellipse values
             a = np.linspace(0, 2*np.pi, num=1000)
             x = [(f-self.mean)*np.cos(i) for i in a]
             y = [nu * np.sin(i) + self.mean for i in a]
 
-            slice = np.linspace(theta_min,theta_max, num=1000)
-            x_slice = [(f-self.mean)*np.cos(i) for i in slice]
-            y_slice = [nu * np.sin(i) + self.mean for i in slice]
+            # slice defined by log likelihood
+            slice = [a for a in zip(x,y) if self.function_likelihood_log(a[0]+a[1]) > log_y]
 
-            xy = zip(x,y)
-            xy = [a for a in xy if self.function_likelihood_log(a[0]+a[1]) > log_y]
-
-            fp_x = (f - self.mean)*np.cos(theta)
-            fp_y = nu*np.sin(theta) + self.mean
+            # bracket defined by theta_min, theta_max
+            x_bracket = [(f-self.mean)*np.cos(i) for i in a if i>=theta_min and i<=theta_max]
+            y_bracket = [nu * np.sin(i) + self.mean for i in a if i>=theta_min and i<=theta_max]
 
             print(number)
 
-            plt.scatter(fp_x, fp_y, color='r', zorder=2, marker='x', s=100)
-            plt.scatter(x,y, zorder=0, color='k')
-            # plt.scatter(x_slice, y_slice,color='g',zorder=1)
-            for bracket_point in xy:
-                plt.scatter(bracket_point[0], bracket_point[1],color='g',zorder=1)
+            darkgreencount = 0
+            limecount = 0
+            redcount = 0
+
+            for x, y in zip(x,y):
+
+                onslice = False
+                onbracket = False
+                paint = 'k'
+                label = ''
+
+                if((x,y) in slice):
+                    onslice = True
+                if(x in x_bracket and y in y_bracket):
+                    onbracket = True
+
+                if(onslice and onbracket):
+                    paint = 'orange'
+                    if(darkgreencount == 0):
+                        label = 'slice + bracket'
+                    darkgreencount += 1
+                elif(onslice and (not onbracket)):
+                    paint = 'yellow'
+                    if(limecount == 0):
+                        label = 'slice'
+                    limecount += 1
+                elif((not onslice) and onbracket):
+                    paint = 'red'
+                    if(redcount == 0):
+                        label = 'bracket'
+                    redcount += 1
+
+                plt.scatter(x, y, color=paint, label=label)
+
+            plt.scatter(fp_x, fp_y, color='r', zorder=3, marker='x', s=100)
             plt.title('sample '+str(number))
+            plt.legend()
             plt.savefig('./gif/'+str(number)+'_'+str(run)+'.png')
             # plt.show()
             plt.close()
