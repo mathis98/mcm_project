@@ -82,17 +82,16 @@ class MetropolisHastingsSampler:
         :param y_value: float
         :return: array sample
         """
-        sample = [0, 0]
-
-        mu_total = ((sigma[0] ** -2) * mu[0] + (sigma[1] ** -2) * mu[1]) / (sigma[0] ** -2 + sigma[1] ** -2)
-        sigma_total = np.sqrt((sigma[0] ** 2 * sigma[1] ** 2) / (sigma[0] ** 2 + sigma[1] ** 2))
 
         # Propose Sample
         #x_proposed, q_ab, q_ba = sampler.q_norm(x_prior, sigma_total) # This is symmetric, so metropolis
         x_proposed, q_ab, q_ba = sampler.q_gumbel_l(x_prior) # This is asymmetric, so metropolis-hastings
 
+        #TODO: Paper
+        #mu_total = ((sigma[0] ** -2) * mu[0] + (sigma[1] ** -2) * mu[1]) / (sigma[0] ** -2 + sigma[1] ** -2)
+        #sigma_total = np.sqrt((sigma[0] ** 2 * sigma[1] ** 2) / (sigma[0] ** 2 + sigma[1] ** 2))
         #nu = np.random.normal(x_prior, sigma_total, 1)
-        #x_proposed = math.sqrt(1-(self.step_size**2))*x_prior + self.step_size * nu # TODO: Paper
+        #x_proposed = math.sqrt(1-(self.step_size**2))*x_prior + self.step_size * nu
 
         y_proposed = 0.0
 
@@ -112,7 +111,7 @@ class MetropolisHastingsSampler:
         acceptance_probability = min(1, acceptance_ratio)
         logging.debug('Acceptance Probability: {}'.format(acceptance_probability))
 
-
+        sample = [0, 0]
         if np.random.rand() < acceptance_probability:
             accept = True
             self.acceptances += 1
@@ -146,15 +145,6 @@ class MetropolisHastingsSampler:
         if plot:
             plt.ion()
             figure, ax = plt.subplots(figsize=(10, 8))
-            line_distribution, = ax.plot(x_vector, target_distribution, '-', linewidth=2, markersize=1)
-            marker_x_value, = ax.plot(0, 0, 'xr', linewidth=2, markersize=10)
-            marker_y_value, = ax.plot(0, 0, 'xy', linewidth=1, markersize=10)
-            marker_samples, = ax.plot(samples[:, 0], samples[:, 1], 'xb', linewidth=2, markersize=10)
-            plt.title("Metropolis Hastings Sampling", fontsize=16)
-            plt.xlim(x_range)
-            plt.ylim([-0.1, 0.75])
-            plt.xlabel("X")
-            plt.ylabel("Y")
 
         # Create Samples
         x_value = np.random.uniform(self.x_range[0], self.x_range[1])  # Random x (Slice) for first sample
@@ -168,28 +158,18 @@ class MetropolisHastingsSampler:
             if plot:
                 # updating data values
                 timer = 0.0001
-                y_value = sample[1]
-                line_distribution.set_xdata(x_vector)
-                line_distribution.set_ydata(target_distribution)
+                ax.cla()
+                ax.plot(x_vector, target_distribution, '-', linewidth=2, markersize=1)
+                #ax.plot(samples[:,0], samples[:,1], 'xb', linewidth=2, markersize=10)
+                plt.hist(samples[:,0], bins=30, color='b', density=True, alpha=0.6)
+                plt.title("Metropolis Hastings Sampling", fontsize=16)
+                plt.xlim(x_range)
+                plt.ylim([-0.1, 0.75])
+                plt.xlabel("X")
+                plt.ylabel("Y")
+                #time.sleep(timer)
                 figure.canvas.flush_events()
-                time.sleep(timer)
-                marker_x_value.set_xdata(x_value)
-                marker_x_value.set_ydata(0)
-                figure.canvas.flush_events()
-                time.sleep(timer)
-                marker_y_value.set_xdata(x_value)
-                marker_y_value.set_ydata(y_value)
-                figure.canvas.flush_events()
-                time.sleep(timer)
-                marker_samples.set_xdata(samples[:, 0])
-                marker_samples.set_ydata(samples[:, 1])
-                figure.canvas.flush_events()
-                time.sleep(timer)
-                figure.canvas.draw() # drawing updated values
-
-                # This will run the GUI event loop until all UI events currently waiting have been processed
-                figure.canvas.flush_events()
-                time.sleep(timer)
+                figure.canvas.draw()
 
             if accept:
                 x_value = sample[0]
@@ -210,7 +190,7 @@ step_size = 0.9
 seed = 0
 
 sampler = MetropolisHastingsSampler(mu, sigma, x_range, step_size, seed)
-samples, acceptances, rejections = sampler.sample_1d(samples_n, burnin, plot=False)
+samples, acceptances, rejections = sampler.sample_1d(samples_n, burnin, plot=True)
 samples_accepted = samples[~np.all(samples == 0, axis=1)]
 
 # Plot End Result

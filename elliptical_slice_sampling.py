@@ -16,14 +16,15 @@ import seaborn as sns
 import statistics
 import math
 import datetime
-
+import time
 
 class EllipticalSliceSampler:
-    def __init__(self, mean, covariance, mu_lkh, sigma_lkh, seed):
+    def __init__(self, mean, covariance, mu_lkh, sigma_lkh, x_range, seed):
         self.mean = mean
         self.covariance = covariance
         self.mu_lkh = mu_lkh
         self.sigma_lkh = sigma_lkh
+        self.x_range = x_range
         self.seed = seed
         np.random.seed(self.seed)
         sns.set()
@@ -73,16 +74,50 @@ class EllipticalSliceSampler:
                     theta_max = theta
                 theta = np.random.uniform(theta_min, theta_max)
 
-    def samples(self, samples_n):
+    def sample_1d(self, samples_n, plot = False):
         """
         Creates n samples in 1d
         :return: sample
         """
+
+        # Create Target Distribution
+        x_vector = np.linspace(self.x_range[0], self.x_range[1], 1000)
+        [mu_total] = ((self.covariance ** -2) * self.mean + (self.sigma_lkh ** -2) * self.mu_lkh) / (self.covariance ** -2 + self.sigma_lkh ** -2)
+        [sigma_total] = np.sqrt((self.covariance ** 2 * self.sigma_lkh ** 2) / (self.covariance ** 2 + self.sigma_lkh ** 2))
+        target_distribution = np.zeros(len(x_vector))
+        for idx, val in enumerate(x_vector):
+            target_distribution[idx] = sampler.p(val, [mu_total], [sigma_total])
+
         samples = np.zeros((samples_n, self.covariance.shape[0]))
+        samples[samples == 0] = -10
+        y_vector = np.zeros((samples_n, self.covariance.shape[0]))
         samples[0] = np.random.multivariate_normal(mean=self.mean, cov=self.covariance)
+
+        # Set up Plotting
+        if plot:
+            plt.ion()
+            figure, ax = plt.subplots(figsize=(10, 8))
 
         for i in range(1, samples_n):
             samples[i] = self.sample(samples[i-1])
+
+            # Update Plot
+            if plot:
+                # updating data values
+                timer = 0.0001
+                ax.cla()
+                line_distribution, = ax.plot(x_vector, target_distribution, '-', linewidth=2, markersize=1)
+                #marker_samples, = ax.plot(samples, y_vector, 'xb', linewidth=2, markersize=10)
+                plt.hist(samples, bins=30, color='b', density=True, alpha=0.6)
+                plt.title("Metropolis Hastings Sampling", fontsize=16)
+                plt.xlim(x_range)
+                plt.ylim([-0.1, 0.75])
+                plt.xlabel("X")
+                plt.ylabel("Y")
+                #time.sleep(timer)
+                figure.canvas.flush_events()
+                figure.canvas.draw()
+
         return samples
 
 # Run Sampler
@@ -96,8 +131,8 @@ mu_lkh = 1.0
 sigma_lkh = 2.0
 seed = 0
 
-sampler = EllipticalSliceSampler(np.array([mu]), np.diag(np.array([sigma**2, ])), mu_lkh, sigma_lkh, seed) #TODO: Add possiblity for mixture of gaussians
-samples = sampler.samples(samples_n=samples_n)
+sampler = EllipticalSliceSampler(np.array([mu]), np.diag(np.array([sigma**2, ])), mu_lkh, sigma_lkh, x_range, seed) #TODO: Add possiblity for mixture of gaussians
+samples = sampler.sample_1d(samples_n=samples_n, plot=True)
 
 # Plot End Results
 mu_total = ((sigma**-2)*mu + (sigma_lkh**-2)*mu_lkh) / (sigma**-2 + sigma_lkh**-2)
