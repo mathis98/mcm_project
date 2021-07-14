@@ -2,6 +2,8 @@
 Script for Elliptical Slice Sampling
 """
 
+# TODO: Add Functionality for Gaussian Mixture
+
 import faulthandler
 import scipy.stats as st
 import numpy as np
@@ -13,6 +15,8 @@ from scipy.stats import norm
 import seaborn as sns
 import statistics
 import math
+import datetime
+
 
 class EllipticalSliceSampler:
     def __init__(self, mean, covariance, mu_lkh, sigma_lkh, seed):
@@ -82,6 +86,8 @@ class EllipticalSliceSampler:
         return samples
 
 # Run Sampler
+begin_time = datetime.datetime.now()
+
 samples_n = 1000
 mu = 5.0
 sigma = 1.0
@@ -128,3 +134,6 @@ print('Mean of Target: {}'.format(target_mean))
 print('Standard Deviation of Samples: {}'.format(samples_std))
 print('Standard Deviation of Target: {}'.format(target_std))
 print('Standard Error: {}'.format((samples_std/samples_n)**0.5))
+print('Execution Time: {}'.format(datetime.datetime.now() - begin_time))
+
+__source__ = ''

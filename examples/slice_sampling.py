@@ -2,13 +2,8 @@
 Script for Slice Sampling
 """
 
-# TODO: Move Elliptical Slice Sampling to Our Scheme
-# TODO: Add Hastings to Metropolis Hastings
-# TODO: Internal Rejection Rate
-# TODO: Computation Time
 # TODO: Add 2d Case
 
-# Imports
 import numpy as np
 import scipy.stats as st
 import seaborn as sns
@@ -17,6 +12,7 @@ import logging
 import time
 import statistics
 import math
+import datetime
 
 
 class SliceSampler:
@@ -34,6 +30,8 @@ class SliceSampler:
         self.sigma = sigma
         self.x_range = x_range
         self.step_size = step_size
+        self.rejections = 0
+        self.acceptances = 0
         np.random.seed(seed)
         sns.set()
 
@@ -86,8 +84,10 @@ class SliceSampler:
             x_proposal = np.random.uniform(w_range[0], w_range[1])
             if y_value < sampler.p(x_proposal, mu, sigma):
                 sample_found = True
+                self.acceptances += 1
                 sample[0] = x_proposal
                 sample[1] = y_value
+            self.rejections += 1
 
         return sample
 
@@ -130,7 +130,7 @@ class SliceSampler:
             samples[i, 1] = sample[1]
 
             if plot:
-                # updating data values
+                # Updating data values
                 timer = 0.001
                 y_value = sample[1]
                 line_distribution.set_xdata(x_vector)
@@ -169,10 +169,12 @@ class SliceSampler:
 
             x_value = sample[0]
 
-        return samples
+        return samples, self.acceptances, self.rejections
 
 
 # Run Sampler
+begin_time = datetime.datetime.now()
+
 samples_n = 1000
 mu = [15, 20]
 sigma = [1, 3]
@@ -181,7 +183,7 @@ w_length = 0.5
 seed = 0
 
 sampler = SliceSampler(mu, sigma, x_range, w_length, seed)
-samples = sampler.samples(samples_n, plot=False)
+samples, acceptances, rejections = sampler.samples(samples_n, plot=False)
 
 # Plot End Result
 x = np.linspace(x_range[0], x_range[1], 1000)
@@ -207,10 +209,12 @@ samples_std = statistics.stdev(samples[:, 0])
 target_mean = sum(np.multiply(x, target_distribution_norm))
 target_std = math.sqrt(sum(np.multiply(target_distribution_norm, (x-target_mean)**2)))
 
+print('Acc: {} / Internal Rej: {} / Ratio: {}'.format(acceptances, rejections, acceptances/rejections))
 print('Mean of Samples: {}'.format(samples_mean))
 print('Mean of Target: {}'.format(target_mean))
 print('Standard Deviation of Samples: {}'.format(samples_std))
 print('Standard Deviation of Target: {}'.format(target_std))
 print('Standard Error: {}'.format((samples_std/samples_n)**0.5))
+print('Execution Time: {}'.format(datetime.datetime.now() - begin_time))
 
 __source__ = ''

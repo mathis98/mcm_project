@@ -2,10 +2,9 @@
 Metropolis Hastings Sampling
 """
 
-# TODO: Add 2d Case
 # TODO: Add Hastings
+# TODO: Add 2d Case
 
-# Imports
 import numpy as np
 import scipy.stats as st
 import seaborn as sns
@@ -14,6 +13,7 @@ import logging
 import time
 import statistics
 import math
+import datetime
 
 
 class MetropolisHastingsSampler:
@@ -31,6 +31,8 @@ class MetropolisHastingsSampler:
         self.sigma = sigma
         self.x_range = x_range
         self.step_size = step_size
+        self.rejections = 0
+        self.acceptances = 0
         np.random.seed(seed)
         sns.set()
 
@@ -56,17 +58,24 @@ class MetropolisHastingsSampler:
         :return: array sample
         """
         sample = [0, 0]
-        logging.debug('Prior Sample:{}{}'.format(x_prior, y_prior))
+
+        mu_total = ((sigma[0] ** -2) * mu[0] + (sigma[1] ** -2) * mu[1]) / (sigma[0] ** -2 + sigma[1] ** -2)
+        sigma_total = np.sqrt((sigma[0] ** 2 * sigma[1] ** 2) / (sigma[0] ** 2 + sigma[1] ** 2))
 
         # Propose Sample
-        x_proposed = np.random.normal(x_prior, 3, 1)  # This is symmetric, so metropolis
-        y_proposed = 0.
-        logging.debug('Proposed Sample:{}{}'.format(x_proposed, y_proposed))
+        x_proposed = np.random.normal(x_prior, sigma_total, 1)  # This is symmetric, so metropolis
+        #nu = np.random.normal(x_prior, sigma_total, 1)
+        #x_proposed = math.sqrt(1-(self.step_size**2))*x_prior + self.step_size * nu
+
+        y_proposed = 0.0
 
         # Accept / Reject
         p_prior = sampler.p(x_prior, self.mu, self.sigma)
-        logging.debug(('Probability Prior {}'.format(p_prior)))
         p_proposed = sampler.p(x_proposed, self.mu, self.sigma)
+
+        logging.debug('Prior Sample:{}{}'.format(x_prior, y_prior))
+        logging.debug('Proposed Sample:{}{}'.format(x_proposed, y_proposed))
+        logging.debug(('Probability Prior {}'.format(p_prior)))
         logging.debug(('Probability Proposed {}'.format(p_proposed)))
 
         g_ab = 1. # TODO: Adjust here for Hastings
@@ -81,11 +90,13 @@ class MetropolisHastingsSampler:
 
         if np.random.rand() < acceptance_probability:
             accept = True
+            self.acceptances += 1
             logging.debug('Sample Accepted: [{} {}]'.format(x_proposed, y_proposed))
             sample[0] = x_proposed
             sample[1] = y_proposed
         else:
             accept = False
+            self.rejections += 1
             logging.debug('Sample Rejected')
 
         return sample, accept
@@ -159,18 +170,22 @@ class MetropolisHastingsSampler:
                 x_value = sample[0]
                 y_value = sample[1]
 
-        return samples
+        return samples, self.acceptances, self.rejections
+
+
+#Run Sampler
+begin_time = datetime.datetime.now()
 
 samples_n = 1000
 burnin = 200
 mu = [15, 20]
 sigma = [1, 3]
 x_range = [5, 35]
-w_length = 0.5
+step_size = 0.9
 seed = 0
 
-sampler = MetropolisHastingsSampler(mu, sigma, x_range, w_length, seed)
-samples = sampler.sample_1d(samples_n, burnin, plot=False)
+sampler = MetropolisHastingsSampler(mu, sigma, x_range, step_size, seed)
+samples, acceptances, rejections = sampler.sample_1d(samples_n, burnin, plot=False)
 samples_accepted = samples[~np.all(samples == 0, axis=1)]
 
 # Plot End Result
@@ -197,8 +212,12 @@ samples_std = statistics.stdev(samples_accepted[:, 0])
 target_mean = sum(np.multiply(x, target_distribution_norm))
 target_std = math.sqrt(sum(np.multiply(target_distribution_norm, (x-target_mean)**2)))
 
+print('Acc: {} / Rej: {} / Ratio: {}'.format(acceptances, rejections, acceptances/rejections))
 print('Mean of Samples: {}'.format(samples_mean))
 print('Mean of Target: {}'.format(target_mean))
 print('Standard Deviation of Samples: {}'.format(samples_std))
 print('Standard Deviation of Target: {}'.format(target_std))
 print('Standard Error: {}'.format((samples_std/samples_n)**0.5))
+print('Execution Time: {}'.format(datetime.datetime.now() - begin_time))
+
+__source__ = ''
