@@ -106,18 +106,19 @@ class EllipticalSliceSampler:
 
             # Update Plot
             if plot:
-                # updating data values
-                timer = 0.0001
+                timer = 0.0
                 ax.cla()
-                line_distribution, = ax.plot(x_vector, target_distribution, '-', linewidth=2, markersize=1)
-                #marker_samples, = ax.plot(samples, y_vector, 'xb', linewidth=2, markersize=10)
-                plt.hist(samples, bins=30, color='b', density=True, alpha=0.6)
-                plt.title("Metropolis Hastings Sampling", fontsize=16)
+                plt.plot(x_vector, target_distribution, '-', linewidth=2, markersize=1)
+                plt.plot(samples, y_vector, 'xk', linewidth=2, markersize=10)
+                plt.hist(samples, bins=30, color='g', density=True, alpha=0.6)
+                plt.title("Elliptical Slice Sampling", fontsize=16)
+                plt.text(0.5, 0.4, 'Iteration: {} \nAccepted: {} \nRejected: {}'.format(i, self.accepted, self.rejected), fontsize=16)
                 plt.xlim(x_range)
-                plt.ylim([-0.1, 0.75])
+                plt.ylim([-0.1, 0.5])
                 plt.xlabel("X")
                 plt.ylabel("Y")
-                #time.sleep(timer)
+                plt.legend(['Target Distribution', 'Samples', 'Histogram'])
+                time.sleep(timer)
                 figure.canvas.flush_events()
                 figure.canvas.draw()
 
