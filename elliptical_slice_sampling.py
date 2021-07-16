@@ -127,7 +127,7 @@ class EllipticalSliceSampler:
                 ax[1].set_title("Samples", fontsize=16)
                 ax[1].set_ylim(x_range)
                 ax[1].set_xlim([0, i])
-                ax[1].set_xlabel("Iterations")
+                ax[1].set_xlabel("Samples")
                 ax[1].set_ylabel("X")
                 ax[1].legend(['Samples'])
 
