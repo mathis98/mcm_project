@@ -30,8 +30,8 @@ class MetropolisHastingsSampler:
         self.sigma = sigma
         self.x_range = x_range
         self.step_size = step_size
-        self.rejections = 0
-        self.acceptances = 0
+        self.accepted = 0
+        self.rejected = 0
         np.random.seed(seed)
         sns.set()
 
@@ -84,12 +84,12 @@ class MetropolisHastingsSampler:
         """
 
         # Propose Sample
-        #x_proposed, q_ab, q_ba = sampler.q_norm(x_prior, sigma_total) # This is symmetric, so metropolis
-        x_proposed, q_ab, q_ba = sampler.q_gumbel_l(x_prior) # This is asymmetric, so metropolis-hastings
+        sigma_total = np.sqrt((sigma[0] ** 2 * sigma[1] ** 2) / (sigma[0] ** 2 + sigma[1] ** 2))
+        x_proposed, q_ab, q_ba = sampler.q_norm(x_prior, sigma_total) # This is symmetric, so metropolis
+        #x_proposed, q_ab, q_ba = sampler.q_gumbel_l(x_prior) # This is asymmetric, so metropolis-hastings
 
         #TODO: Paper
         #mu_total = ((sigma[0] ** -2) * mu[0] + (sigma[1] ** -2) * mu[1]) / (sigma[0] ** -2 + sigma[1] ** -2)
-        #sigma_total = np.sqrt((sigma[0] ** 2 * sigma[1] ** 2) / (sigma[0] ** 2 + sigma[1] ** 2))
         #nu = np.random.normal(x_prior, sigma_total, 1)
         #x_proposed = math.sqrt(1-(self.step_size**2))*x_prior + self.step_size * nu
 
@@ -114,13 +114,13 @@ class MetropolisHastingsSampler:
         sample = [0, 0]
         if np.random.rand() < acceptance_probability:
             accept = True
-            self.acceptances += 1
+            self.accepted += 1
             logging.debug('Sample Accepted: [{} {}]'.format(x_proposed, y_proposed))
             sample[0] = x_proposed
             sample[1] = y_proposed
         else:
             accept = False
-            self.rejections += 1
+            self.rejected += 1
             logging.debug('Sample Rejected')
 
         return sample, accept
@@ -139,7 +139,7 @@ class MetropolisHastingsSampler:
             target_distribution[idx] = sampler.p(val, self.mu, self.sigma)
 
         # Create Samples
-        samples = np.empty([samples_n, 2])
+        samples = np.zeros([samples_n, 2])
 
         # Set up Plotting
         if plot:
@@ -156,18 +156,19 @@ class MetropolisHastingsSampler:
 
             # Update Plot
             if plot:
-                # updating data values
-                timer = 0.0001
+                timer = 0.0
                 ax.cla()
                 ax.plot(x_vector, target_distribution, '-', linewidth=2, markersize=1)
-                #ax.plot(samples[:,0], samples[:,1], 'xb', linewidth=2, markersize=10)
-                plt.hist(samples[:,0], bins=30, color='b', density=True, alpha=0.6)
+                ax.plot(samples[:, 0], samples[:, 1], 'xk', linewidth=2, markersize=10)
+                plt.hist(samples[:, 0], bins=30, color='g', density=True, alpha=0.6)
                 plt.title("Metropolis Hastings Sampling", fontsize=16)
+                plt.text(5.5, 0.4, 'Iteration: {} \nAccepted: {} \nRejected: {}'.format(i, self.accepted, self.rejected), fontsize=16)
                 plt.xlim(x_range)
-                plt.ylim([-0.1, 0.75])
+                plt.ylim([-0.1, 0.5])
                 plt.xlabel("X")
                 plt.ylabel("Y")
-                #time.sleep(timer)
+                plt.legend(['Target Distribution', 'Samples', 'Histogram'])
+                time.sleep(timer)
                 figure.canvas.flush_events()
                 figure.canvas.draw()
 
