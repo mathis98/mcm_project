@@ -26,6 +26,8 @@ class EllipticalSliceSampler:
         self.sigma_lkh = sigma_lkh
         self.x_range = x_range
         self.seed = seed
+        self.accepted = 0
+        self.rejected = 0
         np.random.seed(self.seed)
         sns.set()
         faulthandler.enable()
@@ -66,6 +68,7 @@ class EllipticalSliceSampler:
             x_proposal_log = sampler.log_likelihood_func(x_proposal)
             if x_proposal_log > y_log:
                 sample_found = True
+                self.accepted += 1
                 return x_proposal
             else:
                 if theta < 0.:
