@@ -147,7 +147,7 @@ class MetropolisHastingsSampler:
             figure, ax = plt.subplots(figsize=(10, 8))
 
         # Create Samples
-        x_value = np.random.uniform(self.x_range[0], self.x_range[1])  # Random x (Slice) for first sample
+        x_value = np.random.uniform(self.x_range[0], self.x_range[1])  # Random x for first sample
         y_value = 0.                                                   # y for first sample
         for i in range(samples_n):
             sample, accept = sampler.sample(x_value, y_value)
