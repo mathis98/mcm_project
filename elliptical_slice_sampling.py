@@ -93,13 +93,14 @@ class EllipticalSliceSampler:
 
         samples = np.zeros((samples_n, self.covariance.shape[0]))
         samples[samples == 0] = -10
+        ax1_y = np.linspace(0, samples_n, num=samples_n)
         y_vector = np.zeros((samples_n, self.covariance.shape[0]))
         samples[0] = np.random.multivariate_normal(mean=self.mean, cov=self.covariance)
 
         # Set up Plotting
         if plot:
             plt.ion()
-            figure, ax = plt.subplots(figsize=(10, 8))
+            figure, ax = plt.subplots(1, 2, figsize=(15, 7))
 
         for i in range(1, samples_n):
             samples[i] = self.sample(samples[i-1])
@@ -107,17 +108,29 @@ class EllipticalSliceSampler:
             # Update Plot
             if plot:
                 timer = 0.0
-                ax.cla()
-                plt.plot(x_vector, target_distribution, '-', linewidth=2, markersize=1)
-                plt.plot(samples, y_vector, 'xk', linewidth=2, markersize=10)
-                plt.hist(samples, bins=30, color='g', density=True, alpha=0.6)
-                plt.title("Elliptical Slice Sampling", fontsize=16)
-                plt.text(0.5, 0.4, 'Iteration: {} \nAccepted: {} \nRejected: {}'.format(i, self.accepted, self.rejected), fontsize=16)
-                plt.xlim(x_range)
-                plt.ylim([-0.1, 0.5])
-                plt.xlabel("X")
-                plt.ylabel("Y")
-                plt.legend(['Target Distribution', 'Samples', 'Histogram'])
+                # Figure 1
+                ax[0].cla()
+                ax[0].plot(target_distribution, x_vector, '-', linewidth=2, markersize=1)
+                #ax[0].plot(y_vector, samples, 'xk', linewidth=2, markersize=10)
+                ax[0].hist(samples, bins=30, color='g', density=True, alpha=0.6, orientation="horizontal")
+                ax[0].set_title("Target Distribution & Histogram", fontsize=16)
+                ax[0].text(0.2, 8.5, 'Iteration: {} \nAccepted: {} \nRejected: {}'.format(i, self.accepted, self.rejected), fontsize=16)
+                ax[0].set_xlim([-0.1, 0.5])
+                ax[0].invert_xaxis()
+                ax[0].set_ylim(x_range)
+                ax[0].set_xlabel('Y')
+                ax[0].set_ylabel('X')
+                ax[0].legend(['Target Distribution', 'Histogram'])
+                # Figure 2
+                ax[1].cla()
+                ax[1].plot(ax1_y, samples, '-b', linewidth=2, markersize=10)
+                ax[1].set_title("Samples", fontsize=16)
+                ax[1].set_ylim(x_range)
+                ax[1].set_xlim([0, i])
+                ax[1].set_xlabel("Iterations")
+                ax[1].set_ylabel("X")
+                ax[1].legend(['Samples'])
+
                 time.sleep(timer)
                 figure.canvas.flush_events()
                 figure.canvas.draw()
