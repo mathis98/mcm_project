@@ -206,7 +206,9 @@ x_range = [5, 35]
 step_size = 0.9
 seed = 0
 
+logging.info('Create Sampler')
 sampler = MetropolisHastingsSampler(mu, sigma, x_range, step_size, seed)
+logging.info('Start sampling')
 samples, accepted, rejected = sampler.sample_1d(samples_n, burnin, plot=True)
 samples_accepted = samples[~np.all(samples == 0, axis=1)]
 
@@ -234,7 +236,7 @@ samples_std = statistics.stdev(samples_accepted[:, 0])
 target_mean = sum(np.multiply(x, target_distribution_norm))
 target_std = math.sqrt(sum(np.multiply(target_distribution_norm, (x-target_mean)**2)))
 
-print('Acc: {} / Rej: {} / Ratio: {}'.format(acceptances, rejections, acceptances/rejections))
+print('Acc: {} / Rej: {} / Ratio: {}'.format(accepted, rejected, accepted/rejected))
 print('Mean of Samples: {}'.format(samples_mean))
 print('Mean of Target: {}'.format(target_mean))
 print('Standard Deviation of Samples: {}'.format(samples_std))
