@@ -118,7 +118,7 @@ class SliceSampler:
             marker_samples, = ax.plot(samples[:, 0], samples[:, 1], 'xb', linewidth=2, markersize=10)
             plt.title("Slice Sampling", fontsize=16)
             plt.xlim(x_range)
-            plt.ylim([-0.1, 0.75])
+            plt.ylim([-0.1, 0.5])
             plt.xlabel("X")
             plt.ylabel("Y")
 
