@@ -183,7 +183,7 @@ w_length = 0.5
 seed = 0
 
 sampler = SliceSampler(mu, sigma, x_range, w_length, seed)
-samples, acceptances, rejections = sampler.samples(samples_n, plot=False)
+samples, acceptances, rejections = sampler.samples(samples_n, plot=True)
 
 # Plot End Result
 x = np.linspace(x_range[0], x_range[1], 1000)
