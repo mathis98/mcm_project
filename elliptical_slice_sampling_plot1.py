@@ -60,6 +60,7 @@ class EllipticalSliceSampler:
         """
         nu = np.random.multivariate_normal(np.zeros(self.mean.shape), self.covariance)
         y_log = sampler.log_likelihood_func(x_prior) + np.log(np.random.uniform())
+        y_proposal = np.exp(y_log)
         theta = np.random.uniform(0., 2.*np.pi)
         theta_min, theta_max = theta - 2.*np.pi, theta
 
@@ -71,6 +72,7 @@ class EllipticalSliceSampler:
             if x_proposal_log > y_log:
                 logging.debug('Accepted')
                 sample_found = True
+                sample = [x_proposal, y_proposal]
                 self.accepted += 1
             else:
                 logging.debug('Rejected Internal')
@@ -80,7 +82,7 @@ class EllipticalSliceSampler:
                 else:
                     theta_max = theta
                 theta = np.random.uniform(theta_min, theta_max)
-        return x_proposal
+        return sample
 
     def sample_1d(self, samples_n, plot=False, plot_timer=0.0):
         """
@@ -96,10 +98,10 @@ class EllipticalSliceSampler:
         for idx, val in enumerate(x_vector):
             target_distribution[idx] = sampler.p(val, [mu_total], [sigma_total])
 
-        samples = np.zeros((samples_n, self.covariance.shape[0]))
+        # Set up Samples
+        samples = np.zeros([samples_n, 2])
         samples[samples == 0] = -10
-        ax1_y = np.linspace(0, samples_n, num=samples_n)
-        samples[0] = np.random.multivariate_normal(mean=self.mean, cov=self.covariance)
+        x_prior = np.random.multivariate_normal(mean=self.mean, cov=self.covariance)
 
         # Set up Plotting
         if plot:
@@ -107,15 +109,18 @@ class EllipticalSliceSampler:
             figure, ax = plt.subplots(1, 2, figsize=(15, 7))
 
         for i in range(1, samples_n):
-            samples[i] = self.sample(samples[i-1], plot=True, plot_timer=plot_timer)
+            sample = sampler.sample(x_prior, plot=True, plot_timer=plot_timer)
+            samples[i-1, 0] = sample[0]
+            samples[i-1, 1] = sample[1]
 
             # Update Plot
             if plot:
+                samples_accepted = samples[~np.all(samples == -10, axis=1)]
                 # Figure 1
                 ax[0].cla()
                 ax[0].plot(target_distribution, x_vector, '-', linewidth=2, markersize=1)
                 #ax[0].plot(y_vector, samples, 'xk', linewidth=2, markersize=10)
-                ax[0].hist(samples, bins=30, color='g', density=True, alpha=0.6, orientation="horizontal")
+                ax[0].hist(samples_accepted[:, 0], bins=30, color='g', density=True, alpha=0.6, orientation="horizontal")
                 ax[0].set_title("Target Distribution & Histogram", fontsize=16)
                 ax[0].text(0.2, 8.5, 'Iteration: {} \nAccepted: {} \nRejected: {}'.format(i, self.accepted, self.rejected), fontsize=16)
                 ax[0].set_xlim([-0.1, 0.5])
@@ -124,12 +129,14 @@ class EllipticalSliceSampler:
                 ax[0].set_xlabel('Y')
                 ax[0].set_ylabel('X')
                 ax[0].legend(['Target Distribution', 'Histogram'])
+
+                increment_vector = np.linspace(0, len(samples_accepted), num=len(samples_accepted))
                 # Figure 2
                 ax[1].cla()
-                ax[1].plot(ax1_y, samples, '-b', linewidth=2, markersize=10)
+                ax[1].plot(increment_vector, samples_accepted[:, 0], '-b', linewidth=2, markersize=10)
                 ax[1].set_title("Samples", fontsize=16)
                 ax[1].set_ylim(x_range)
-                ax[1].set_xlim([0, i])
+                ax[1].set_xlim([0, len(samples_accepted)])
                 ax[1].set_xlabel("Samples")
                 ax[1].set_ylabel("X")
                 ax[1].legend(['Samples'])
@@ -138,6 +145,7 @@ class EllipticalSliceSampler:
                 figure.canvas.flush_events()
                 figure.canvas.draw()
 
+            x_prior = sample[0]
         return samples
 
 # Run Sampler
@@ -146,14 +154,14 @@ begin_time = datetime.datetime.now()
 samples_n = 1000
 mu = 5.0
 sigma = 1.0
-x_range = [-0, 10]
+x_range = [0.5, 10]
 mu_lkh = 1.0
 sigma_lkh = 2.0
 seed = 0
-plot_timer = 0.5
+plot_timer = 0.0
 
 sampler = EllipticalSliceSampler(np.array([mu]), np.diag(np.array([sigma**2, ])), mu_lkh, sigma_lkh, x_range, seed)
-samples = sampler.sample_1d(samples_n=samples_n, plot=False, plot_timer=plot_timer)
+samples = sampler.sample_1d(samples_n=samples_n, plot=True, plot_timer=plot_timer)
 
 # Plot End Results
 mu_total = ((sigma**-2)*mu + (sigma_lkh**-2)*mu_lkh) / (sigma**-2 + sigma_lkh**-2)
@@ -167,7 +175,7 @@ for idx, val in enumerate(x):
 target_distribution_norm = [float(i)/sum(target_distribution) for i in target_distribution]
 
 plt.figure(figsize=(17, 6))
-plt.hist(samples, bins=30, color='b', density=True, alpha=0.6)
+plt.hist(samples[:, 0], bins=30, color='b', density=True, alpha=0.6)
 plt.plot(x, target_distribution, '-r', linewidth=2)
 plt.title("Elliptical Slice Sampling", fontsize=16)
 plt.xlim(x_range)
