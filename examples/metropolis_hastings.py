@@ -35,9 +35,6 @@ class MetropolisHastingsSampler:
 
         # sns.set()
         self.c_target = (0.1215686, 0.4666667, 0.70588235)
-        self.c_likeli = (0.8392157, 0.1529411, 0.1568627)
-        self.c_norm = (1.0, 0.498039, 0.05490196)
-        self.c_fp = 'black'
         np.random.seed(seed)
 
     def p(self, x, mu, sigma):
