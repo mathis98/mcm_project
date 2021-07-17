@@ -32,8 +32,13 @@ class MetropolisHastingsSampler:
         self.step_size = step_size
         self.accepted = 0
         self.rejected = 0
+
+        # sns.set()
+        self.c_target = (0.1215686, 0.4666667, 0.70588235)
+        self.c_likeli = (0.8392157, 0.1529411, 0.1568627)
+        self.c_norm = (1.0, 0.498039, 0.05490196)
+        self.c_fp = 'black'
         np.random.seed(seed)
-        sns.set()
 
     def p(self, x, mu, sigma):
         """
@@ -144,7 +149,7 @@ class MetropolisHastingsSampler:
         # Set up Plotting
         if plot:
             plt.ion()
-            figure, ax = plt.subplots(1, 2, figsize=(15, 7))
+            figure, ax = plt.subplots(1, 2, figsize=(20, 6))
 
         # Create Samples
         x_value = np.random.uniform(self.x_range[0], self.x_range[1])  # Random x for first sample
@@ -159,30 +164,32 @@ class MetropolisHastingsSampler:
                 timer = 0.0
                 # Figure 1
                 ax[0].cla()
-                ax[0].plot(target_distribution, x_vector, '-', linewidth=2, markersize=1)
+                ax[0].plot(target_distribution, x_vector, '-', markersize=12, c=self.c_target)
                 #ax[0].plot(y_vector, samples, 'xk', linewidth=2, markersize=10)
                 ax[0].hist(samples[:, 0], bins=30, color='g', density=True, alpha=0.6, orientation="horizontal")
-                ax[0].set_title("Target Distribution & Histogram", fontsize=16)
-                ax[0].text(0.2, 8.5, 'Iteration: {} \nAccepted: {} \nRejected: {}'.format(i, self.accepted, self.rejected), fontsize=16)
+                ax[0].set_title("target distribution & histogram", fontsize=16)
+                ax[0].text(0.3, 30.0, 'iteration: {} \naccepted: {} \nrejected: {}'.format(i, self.accepted, self.rejected), fontsize=16)
                 ax[0].set_xlim([-0.1, 0.5])
                 ax[0].invert_xaxis()
                 ax[0].set_ylim(x_range)
-                ax[0].set_xlabel('Y')
-                ax[0].set_ylabel('X')
-                ax[0].legend(['Target Distribution', 'Histogram'])
+                ax[0].set_xlabel('value')
+                ax[0].set_ylabel('sample')
+                ax[0].grid()
+                ax[0].legend(['target Distribution', 'histogram'])
 
                 samples_accepted = samples[~np.all(samples == 0, axis=1)]
                 ax1_y = np.linspace(0, len(samples_accepted), num=len(samples_accepted))
 
                 # Figure 2
                 ax[1].cla()
-                ax[1].plot(ax1_y, samples_accepted[:, 0], '-b', linewidth=2, markersize=10)
-                ax[1].set_title("Samples", fontsize=16)
+                ax[1].plot(ax1_y, samples_accepted[:, 0], '-', markersize=12, c=self.c_target)
+                ax[1].set_title("samples", fontsize=16)
                 ax[1].set_ylim(x_range)
                 ax[1].set_xlim([0, len(samples_accepted)])
-                ax[1].set_xlabel("Samples")
-                ax[1].set_ylabel("X")
-                ax[1].legend(['Samples'])
+                ax[1].set_xlabel("iteration")
+                ax[1].set_ylabel("sample")
+                ax[1].grid()
+                ax[1].legend(['samples'])
 
                 time.sleep(timer)
                 figure.canvas.flush_events()
