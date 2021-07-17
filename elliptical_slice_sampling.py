@@ -2,13 +2,8 @@
 Script for Elliptical Slice Sampling
 """
 
-# TODO: Add Functionality for Gaussian Mixture
-
 import faulthandler
 import scipy.stats as st
-import numpy as np
-from scipy.stats import norm
-from numpy.core.fromnumeric import mean
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.stats import norm
@@ -17,9 +12,11 @@ import statistics
 import math
 import datetime
 import time
+import logging
 
 class EllipticalSliceSampler:
     def __init__(self, mean, covariance, mu_lkh, sigma_lkh, x_range, seed):
+        logging.basicConfig(level=logging.INFO)
         self.mean = mean
         self.covariance = covariance
         self.mu_lkh = mu_lkh
@@ -28,16 +25,22 @@ class EllipticalSliceSampler:
         self.seed = seed
         self.accepted = 0
         self.rejected = 0
+        self.rejected_internal = 0
         np.random.seed(self.seed)
         sns.set()
         faulthandler.enable()
 
     def log_likelihood_func(self, x):
+        """
+        Defines the likelihood function.
+        :param x:
+        :return:
+        """
         return norm.logpdf(x, self.mu_lkh, self.sigma_lkh)
 
     def p(self, x, mu, sigma):
         """
-        Defines a 1D Target Distribution
+        Defines a 1D Target Distribution.
         :param x: x value
         :param mu: List of Means
         :param sigma: List of Standard Deviations
@@ -49,9 +52,9 @@ class EllipticalSliceSampler:
             p[idx] = st.norm.pdf(x, loc=mu_val, scale=sigma_val) # Scale is Standard Deviation
         return sum(p)
 
-    def sample(self, x_prior):
+    def sample(self, x_prior, plot=True, plot_timer = 0.0):
         """
-        Creates a single Sample. x_value is the prior x
+        Creates a single Sample.
         :param x_prior:
         :return:
         """
@@ -60,24 +63,26 @@ class EllipticalSliceSampler:
         theta = np.random.uniform(0., 2.*np.pi)
         theta_min, theta_max = theta - 2.*np.pi, theta
 
-        sample = [0, 0]
         # Sample Value
         sample_found = False
         while not sample_found:
             x_proposal = (x_prior - self.mean)*np.cos(theta) + nu*np.sin(theta) + self.mean
             x_proposal_log = sampler.log_likelihood_func(x_proposal)
             if x_proposal_log > y_log:
+                logging.debug('Accepted')
                 sample_found = True
                 self.accepted += 1
-                return x_proposal
             else:
+                logging.debug('Rejected Internal')
+                self.rejected_internal += 1
                 if theta < 0.:
                     theta_min = theta
                 else:
                     theta_max = theta
                 theta = np.random.uniform(theta_min, theta_max)
+        return x_proposal
 
-    def sample_1d(self, samples_n, plot = False):
+    def sample_1d(self, samples_n, plot=False, plot_timer=0.0):
         """
         Creates n samples in 1d
         :return: sample
@@ -85,8 +90,8 @@ class EllipticalSliceSampler:
 
         # Create Target Distribution
         x_vector = np.linspace(self.x_range[0], self.x_range[1], 1000)
-        [mu_total] = ((self.covariance ** -2) * self.mean + (self.sigma_lkh ** -2) * self.mu_lkh) / (self.covariance ** -2 + self.sigma_lkh ** -2)
-        [sigma_total] = np.sqrt((self.covariance ** 2 * self.sigma_lkh ** 2) / (self.covariance ** 2 + self.sigma_lkh ** 2))
+        mu_total = ((self.covariance ** -2) * self.mean + (self.sigma_lkh ** -2) * self.mu_lkh) / (self.covariance ** -2 + self.sigma_lkh ** -2)
+        sigma_total = np.sqrt((self.covariance ** 2 * self.sigma_lkh ** 2) / (self.covariance ** 2 + self.sigma_lkh ** 2))
         target_distribution = np.zeros(len(x_vector))
         for idx, val in enumerate(x_vector):
             target_distribution[idx] = sampler.p(val, [mu_total], [sigma_total])
@@ -94,7 +99,6 @@ class EllipticalSliceSampler:
         samples = np.zeros((samples_n, self.covariance.shape[0]))
         samples[samples == 0] = -10
         ax1_y = np.linspace(0, samples_n, num=samples_n)
-        y_vector = np.zeros((samples_n, self.covariance.shape[0]))
         samples[0] = np.random.multivariate_normal(mean=self.mean, cov=self.covariance)
 
         # Set up Plotting
@@ -103,11 +107,10 @@ class EllipticalSliceSampler:
             figure, ax = plt.subplots(1, 2, figsize=(15, 7))
 
         for i in range(1, samples_n):
-            samples[i] = self.sample(samples[i-1])
+            samples[i] = self.sample(samples[i-1], plot=True, plot_timer=plot_timer)
 
             # Update Plot
             if plot:
-                timer = 0.0
                 # Figure 1
                 ax[0].cla()
                 ax[0].plot(target_distribution, x_vector, '-', linewidth=2, markersize=1)
@@ -131,7 +134,7 @@ class EllipticalSliceSampler:
                 ax[1].set_ylabel("X")
                 ax[1].legend(['Samples'])
 
-                time.sleep(timer)
+                time.sleep(plot_timer)
                 figure.canvas.flush_events()
                 figure.canvas.draw()
 
@@ -147,14 +150,14 @@ x_range = [-0, 10]
 mu_lkh = 1.0
 sigma_lkh = 2.0
 seed = 0
+plot_timer = 0.5
 
-sampler = EllipticalSliceSampler(np.array([mu]), np.diag(np.array([sigma**2, ])), mu_lkh, sigma_lkh, x_range, seed) #TODO: Add possiblity for mixture of gaussians
-samples = sampler.sample_1d(samples_n=samples_n, plot=True)
+sampler = EllipticalSliceSampler(np.array([mu]), np.diag(np.array([sigma**2, ])), mu_lkh, sigma_lkh, x_range, seed)
+samples = sampler.sample_1d(samples_n=samples_n, plot=False, plot_timer=plot_timer)
 
 # Plot End Results
 mu_total = ((sigma**-2)*mu + (sigma_lkh**-2)*mu_lkh) / (sigma**-2 + sigma_lkh**-2)
 sigma_total = np.sqrt((sigma**2 * sigma_lkh**2) / (sigma**2 + sigma_lkh**2))
-#p = norm.pdf(x, mu_total, sigma_total)
 
 x = np.linspace(x_range[0], x_range[1], 1000)
 target_distribution = np.zeros(len(x))
@@ -166,8 +169,7 @@ target_distribution_norm = [float(i)/sum(target_distribution) for i in target_di
 plt.figure(figsize=(17, 6))
 plt.hist(samples, bins=30, color='b', density=True, alpha=0.6)
 plt.plot(x, target_distribution, '-r', linewidth=2)
-#plt.plot(x, p, 'k', linewidth=2)
-plt.title("Slice Sampling", fontsize=16)
+plt.title("Elliptical Slice Sampling", fontsize=16)
 plt.xlim(x_range)
 plt.ylim([-0.1, 0.75])
 plt.xlabel("X")
