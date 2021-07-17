@@ -13,6 +13,7 @@ import time
 import statistics
 import math
 import datetime
+import logging
 
 
 class SliceSampler:
@@ -33,7 +34,11 @@ class SliceSampler:
         self.rejections = 0
         self.acceptances = 0
         np.random.seed(seed)
-        sns.set()
+        #sns.set()
+        self.c_target = (0.1215686, 0.4666667, 0.70588235)
+        self.c_likeli = (0.8392157, 0.1529411, 0.1568627)
+        self.c_norm = (1.0, 0.498039, 0.05490196)
+        self.c_fp = 'black'
 
     def p(self, x, mu, sigma):
         """
@@ -109,18 +114,20 @@ class SliceSampler:
 
         if plot:
             plt.ion()
-            figure, ax = plt.subplots(figsize=(10, 8))
-            line_distribution, = ax.plot(x_vector, target_distribution, '-', linewidth=2, markersize=1)
-            marker_x_value, = ax.plot(0, 0, 'xr', linewidth=2, markersize=10)
-            line_y_vector, = ax.plot([0] * len(np.linspace(0, 1, 2)), np.linspace(0, 1, 2), '-g', linewidth=2, markersize=1)
-            marker_y_value, = ax.plot(0, 0, 'xy', linewidth=1, markersize=10)
-            line_w, = ax.plot(np.linspace(0, 1, 2), [0] * len(np.linspace(0, 1, 2)), '-m', linewidth=2, markersize=10)
-            marker_samples, = ax.plot(samples[:, 0], samples[:, 1], 'xb', linewidth=2, markersize=10)
-            plt.title("Slice Sampling", fontsize=16)
+            figure, ax = plt.subplots(figsize=(10, 6))
+            line_distribution, = ax.plot(x_vector, target_distribution, '-', c=self.c_target, label='target distribution')
+            marker_samples, = ax.plot(samples[:, 0], samples[:, 1], 'x', markersize=12, c=self.c_target, label='samples')
+            marker_x_value, = ax.plot(0, 0, 'x', markersize=12, c=self.c_norm,label='current state')
+            line_y_vector, = ax.plot([0] * len(np.linspace(0, 1, 2)), np.linspace(0, 1, 2), '--', c=self.c_likeli, label='slice')
+            marker_y_value, = ax.plot(0, 0, '.', markersize=12, c=self.c_likeli)
+            line_w, = ax.plot(np.linspace(0, 1, 2), [0] * len(np.linspace(0, 1, 2)), '--', c=self.c_fp, label='bracket')
+            plt.title("slice sampling")
+            plt.legend()
+            plt.grid(True)
             plt.xlim(x_range)
             plt.ylim([-0.1, 0.5])
-            plt.xlabel("X")
-            plt.ylabel("Y")
+            plt.xlabel("sample")
+            plt.ylabel("value")
 
         # Create Samples
         x_value = np.random.uniform(self.x_range[0], self.x_range[1])  # Random x (Slice) for first sample
@@ -131,7 +138,7 @@ class SliceSampler:
 
             if plot:
                 # Updating data values
-                timer = 0.001
+                timer = 0.0
                 y_value = sample[1]
                 line_distribution.set_xdata(x_vector)
                 line_distribution.set_ydata(target_distribution)
