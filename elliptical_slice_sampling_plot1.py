@@ -30,7 +30,11 @@ class EllipticalSliceSampler:
         self.rejected = 0
         self.rejected_internal = 0
         np.random.seed(self.seed)
-        sns.set()
+        #sns.set()
+        self.c_target = (0.1215686, 0.4666667, 0.70588235)
+        self.c_likeli = (0.8392157, 0.1529411, 0.1568627)
+        self.c_norm = (1.0, 0.498039, 0.05490196)
+        self.c_fp = 'black'
         faulthandler.enable()
 
     def log_likelihood_func(self, x):
@@ -118,20 +122,22 @@ class EllipticalSliceSampler:
 
         if plot:
             plt.ion()
-            figure, ax = plt.subplots(figsize=(10, 8))
-            line_distribution_target = ax.plot(x_vector, distribution_target, '-', linewidth=2, markersize=1)
-            line_distribution_lkh = ax.plot(x_vector, distribution_lkh, '-', linewidth=2, markersize=1)
-            line_distribution_pool = ax.plot(x_vector, distribution_pool, '-', linewidth=2, markersize=1)
-            marker_x_value, = ax.plot(0, 0, 'xr', linewidth=2, markersize=10)
-            line_y_vector, = ax.plot([0] * len(np.linspace(0, 0, 2)), np.linspace(0, 0, 2), '-g', linewidth=2, markersize=1)
-            marker_y_value, = ax.plot(0, 0, 'xy', linewidth=1, markersize=10)
-            line_w, = ax.plot(np.linspace(0, 1, 2), [0] * len(np.linspace(0, 1, 2)), '-m', linewidth=2, markersize=10)
-            marker_samples, = ax.plot(samples[:, 0], samples[:, 1], 'xb', linewidth=2, markersize=10)
-            plt.title("Slice Sampling", fontsize=16)
+            figure, ax = plt.subplots(figsize=(10, 6))
+            line_distribution_target = ax.plot(x_vector, distribution_target, '-', c=self.c_target, label='target distribution')
+            line_distribution_lkh = ax.plot(x_vector, distribution_lkh, '-', c=self.c_likeli, label='likelihood')
+            line_distribution_pool = ax.plot(x_vector, distribution_pool, '-', c=self.c_norm, label='$\mathcal{N}(0, \Sigma)$')
+            marker_samples, = ax.plot(samples[:, 0], samples[:, 1], 'x', c=self.c_fp, markersize=12, label='sample')
+            marker_x_prior, = ax.plot(0, 0, 'x', markersize=12, c=self.c_target, label='current state')
+            line_y_vector, = ax.plot([0] * len(np.linspace(0, 0, 2)), np.linspace(0, 0, 2), '--', c=self.c_likeli)
+            marker_y_value, = ax.plot(0, 0, '.', markersize=12, c=self.c_likeli)
+            line_w, = ax.plot(np.linspace(0, 1, 2), [0] * len(np.linspace(0, 1, 2)), '--', c=self.c_likeli)
+            plt.title("elliptical slice sampling")
+            plt.legend()
+            plt.grid(True)
             plt.xlim(x_range)
             plt.ylim([-0.1, 0.5])
-            plt.xlabel("X")
-            plt.ylabel("Y")
+            plt.xlabel("sample")
+            plt.ylabel("value")
 
         for i in range(1, samples_n):
             sample = sampler.sample(x_prior, plot=True, plot_timer=plot_timer)
@@ -141,24 +147,23 @@ class EllipticalSliceSampler:
             # Update Plot
             if plot:
                 # Updating data values
-                marker_x_value.set_xdata(sample[0])
-                marker_x_value.set_ydata(0)
+                marker_samples.set_xdata(samples[:, 0])
+                marker_samples.set_ydata(samples[:, 1])
                 figure.canvas.flush_events()
                 time.sleep(plot_timer)
-                line_y_vector.set_xdata([sample[0], sample[0]])
-                line_y_vector.set_ydata([0, sampler.p(sample[0], [self.mu_lkh], [self.sigma_lkh])])
+                marker_x_prior.set_xdata(x_prior)
                 figure.canvas.flush_events()
                 time.sleep(plot_timer)
-                marker_y_value.set_xdata(sample[0])
+                line_y_vector.set_xdata([x_prior, x_prior])
+                line_y_vector.set_ydata([0, sampler.p(x_prior, [self.mu_lkh], [self.sigma_lkh])])
+                figure.canvas.flush_events()
+                time.sleep(plot_timer)
+                marker_y_value.set_xdata(x_prior)
                 marker_y_value.set_ydata(sample[1])
                 figure.canvas.flush_events()
                 time.sleep(plot_timer)
                 line_w.set_xdata(self.w_vector)
                 line_w.set_ydata([sample[1]] * len(self.w_vector))
-                figure.canvas.flush_events()
-                time.sleep(plot_timer)
-                marker_samples.set_xdata(samples[:, 0])
-                marker_samples.set_ydata(samples[:, 1])
                 figure.canvas.flush_events()
                 time.sleep(plot_timer)
 
@@ -184,7 +189,7 @@ x_range = [-10, 15]
 mu_lkh = 1.0
 sigma_lkh = 2.0
 seed = 0
-plot_timer = 0.0
+plot_timer = 0.25
 
 sampler = EllipticalSliceSampler(np.array([mu]), np.diag(np.array([sigma**2, ])), mu_lkh, sigma_lkh, x_range, seed)
 samples = sampler.sample_1d(samples_n=samples_n, plot=True, plot_timer=plot_timer)
