@@ -33,7 +33,11 @@ class MetropolisHastingsSampler:
         self.accepted = 0
         self.rejected = 0
         np.random.seed(seed)
-        sns.set()
+        #sns.set()
+        self.c_target = (0.1215686, 0.4666667, 0.70588235)
+        self.c_likeli = (0.8392157, 0.1529411, 0.1568627)
+        self.c_norm = (1.0, 0.498039, 0.05490196)
+        self.c_fp = 'black'
 
     def p(self, x, mu, sigma):
         """
@@ -144,7 +148,7 @@ class MetropolisHastingsSampler:
         # Set up Plotting
         if plot:
             plt.ion()
-            figure, ax = plt.subplots(figsize=(10, 8))
+            figure, ax = plt.subplots(figsize=(10, 6))
 
         # Create Samples
         x_value = np.random.uniform(self.x_range[0], self.x_range[1])  # Random x for first sample
@@ -158,16 +162,17 @@ class MetropolisHastingsSampler:
             if plot:
                 timer = 0.0
                 ax.cla()
-                ax.plot(x_vector, target_distribution, '-', linewidth=2, markersize=1)
-                ax.plot(samples[:, 0], samples[:, 1], 'xk', linewidth=2, markersize=10)
+                ax.plot(x_vector, target_distribution, '-', markersize=12)
+                ax.plot(samples[:, 0], samples[:, 1]-0.01, 'x', markersize=12, alpha=0.25, c=self.c_target)
                 plt.hist(samples[:, 0], bins=30, color='g', density=True, alpha=0.6)
-                plt.title("Metropolis Hastings Sampling", fontsize=16)
-                plt.text(5.5, 0.4, 'Iteration: {} \nAccepted: {} \nRejected: {}'.format(i, self.accepted, self.rejected), fontsize=16)
+                plt.title("metropolis hastings sampling")
+                plt.text(5.5, 0.4, 'iteration: {} \naccepted: {} \nrejected: {}'.format(i, self.accepted, self.rejected))
                 plt.xlim(x_range)
-                plt.ylim([-0.1, 0.5])
+                plt.ylim([-0.05, 0.5])
                 plt.xlabel("X")
                 plt.ylabel("Y")
-                plt.legend(['Target Distribution', 'Samples', 'Histogram'])
+                plt.grid(True)
+                plt.legend(['target Distribution', 'samples', 'histogram'])
                 time.sleep(timer)
                 figure.canvas.flush_events()
                 figure.canvas.draw()
