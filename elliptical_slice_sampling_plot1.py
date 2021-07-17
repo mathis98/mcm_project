@@ -14,6 +14,9 @@ import datetime
 import time
 import logging
 
+# TODO: Add plotting
+# TODO: Adjust style to Erik
+
 class EllipticalSliceSampler:
     def __init__(self, mean, covariance, mu_lkh, sigma_lkh, x_range, seed):
         logging.basicConfig(level=logging.INFO)
@@ -63,6 +66,8 @@ class EllipticalSliceSampler:
         y_proposal = np.exp(y_log)
         theta = np.random.uniform(0., 2.*np.pi)
         theta_min, theta_max = theta - 2.*np.pi, theta
+        w_range = [-100, 100]
+        self.w_vector = np.linspace(w_range[0], w_range[1], 2)
 
         # Sample Value
         sample_found = False
@@ -77,6 +82,10 @@ class EllipticalSliceSampler:
             else:
                 logging.debug('Rejected Internal')
                 self.rejected_internal += 1
+                if x_proposal > x_prior:
+                    self.w_vector[1] = x_proposal
+                elif x_proposal < x_prior:
+                    self.w_vector[0] = x_proposal
                 if theta < 0.:
                     theta_min = theta
                 else:
@@ -94,19 +103,35 @@ class EllipticalSliceSampler:
         x_vector = np.linspace(self.x_range[0], self.x_range[1], 1000)
         mu_total = ((self.covariance ** -2) * self.mean + (self.sigma_lkh ** -2) * self.mu_lkh) / (self.covariance ** -2 + self.sigma_lkh ** -2)
         sigma_total = np.sqrt((self.covariance ** 2 * self.sigma_lkh ** 2) / (self.covariance ** 2 + self.sigma_lkh ** 2))
-        target_distribution = np.zeros(len(x_vector))
+        distribution_target = np.zeros(len(x_vector))
+        distribution_lkh = np.zeros(len(x_vector))
+        distribution_pool = np.zeros(len(x_vector))
         for idx, val in enumerate(x_vector):
-            target_distribution[idx] = sampler.p(val, [mu_total], [sigma_total])
+            distribution_target[idx] = sampler.p(val, [mu_total], [sigma_total])
+            distribution_lkh[idx] = sampler.p(val, [self.mu_lkh], [self.sigma_lkh])
+            distribution_pool[idx] = sampler.p(val, [self.mean], [self.covariance])
 
         # Set up Samples
         samples = np.zeros([samples_n, 2])
         samples[samples == 0] = -10
         x_prior = np.random.multivariate_normal(mean=self.mean, cov=self.covariance)
 
-        # Set up Plotting
         if plot:
             plt.ion()
-            figure, ax = plt.subplots(1, 2, figsize=(15, 7))
+            figure, ax = plt.subplots(figsize=(10, 8))
+            line_distribution_target = ax.plot(x_vector, distribution_target, '-', linewidth=2, markersize=1)
+            line_distribution_lkh = ax.plot(x_vector, distribution_lkh, '-', linewidth=2, markersize=1)
+            line_distribution_pool = ax.plot(x_vector, distribution_pool, '-', linewidth=2, markersize=1)
+            marker_x_value, = ax.plot(0, 0, 'xr', linewidth=2, markersize=10)
+            line_y_vector, = ax.plot([0] * len(np.linspace(0, 0, 2)), np.linspace(0, 0, 2), '-g', linewidth=2, markersize=1)
+            marker_y_value, = ax.plot(0, 0, 'xy', linewidth=1, markersize=10)
+            line_w, = ax.plot(np.linspace(0, 1, 2), [0] * len(np.linspace(0, 1, 2)), '-m', linewidth=2, markersize=10)
+            marker_samples, = ax.plot(samples[:, 0], samples[:, 1], 'xb', linewidth=2, markersize=10)
+            plt.title("Slice Sampling", fontsize=16)
+            plt.xlim(x_range)
+            plt.ylim([-0.1, 0.5])
+            plt.xlabel("X")
+            plt.ylabel("Y")
 
         for i in range(1, samples_n):
             sample = sampler.sample(x_prior, plot=True, plot_timer=plot_timer)
@@ -115,35 +140,36 @@ class EllipticalSliceSampler:
 
             # Update Plot
             if plot:
-                samples_accepted = samples[~np.all(samples == -10, axis=1)]
-                # Figure 1
-                ax[0].cla()
-                ax[0].plot(target_distribution, x_vector, '-', linewidth=2, markersize=1)
-                #ax[0].plot(y_vector, samples, 'xk', linewidth=2, markersize=10)
-                ax[0].hist(samples_accepted[:, 0], bins=30, color='g', density=True, alpha=0.6, orientation="horizontal")
-                ax[0].set_title("Target Distribution & Histogram", fontsize=16)
-                ax[0].text(0.2, 8.5, 'Iteration: {} \nAccepted: {} \nRejected: {}'.format(i, self.accepted, self.rejected), fontsize=16)
-                ax[0].set_xlim([-0.1, 0.5])
-                ax[0].invert_xaxis()
-                ax[0].set_ylim(x_range)
-                ax[0].set_xlabel('Y')
-                ax[0].set_ylabel('X')
-                ax[0].legend(['Target Distribution', 'Histogram'])
-
-                increment_vector = np.linspace(0, len(samples_accepted), num=len(samples_accepted))
-                # Figure 2
-                ax[1].cla()
-                ax[1].plot(increment_vector, samples_accepted[:, 0], '-b', linewidth=2, markersize=10)
-                ax[1].set_title("Samples", fontsize=16)
-                ax[1].set_ylim(x_range)
-                ax[1].set_xlim([0, len(samples_accepted)])
-                ax[1].set_xlabel("Samples")
-                ax[1].set_ylabel("X")
-                ax[1].legend(['Samples'])
-
-                time.sleep(plot_timer)
+                # Updating data values
+                marker_x_value.set_xdata(sample[0])
+                marker_x_value.set_ydata(0)
                 figure.canvas.flush_events()
+                time.sleep(plot_timer)
+                line_y_vector.set_xdata([sample[0], sample[0]])
+                line_y_vector.set_ydata([0, sampler.p(sample[0], [self.mu_lkh], [self.sigma_lkh])])
+                figure.canvas.flush_events()
+                time.sleep(plot_timer)
+                marker_y_value.set_xdata(sample[0])
+                marker_y_value.set_ydata(sample[1])
+                figure.canvas.flush_events()
+                time.sleep(plot_timer)
+                line_w.set_xdata(self.w_vector)
+                line_w.set_ydata([sample[1]] * len(self.w_vector))
+                figure.canvas.flush_events()
+                time.sleep(plot_timer)
+                marker_samples.set_xdata(samples[:, 0])
+                marker_samples.set_ydata(samples[:, 1])
+                figure.canvas.flush_events()
+                time.sleep(plot_timer)
+
+                # drawing updated values
                 figure.canvas.draw()
+
+                # This will run the GUI event
+                # loop until all UI events
+                # currently waiting have been processed
+                figure.canvas.flush_events()
+                time.sleep(plot_timer)
 
             x_prior = sample[0]
         return samples
@@ -154,7 +180,7 @@ begin_time = datetime.datetime.now()
 samples_n = 1000
 mu = 5.0
 sigma = 1.0
-x_range = [0.5, 10]
+x_range = [-10, 15]
 mu_lkh = 1.0
 sigma_lkh = 2.0
 seed = 0
