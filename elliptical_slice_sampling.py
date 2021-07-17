@@ -27,7 +27,9 @@ class EllipticalSliceSampler:
         self.rejected = 0
         self.rejected_internal = 0
         np.random.seed(self.seed)
-        sns.set()
+        #sns.set()
+        self.c_target = (0.1215686, 0.4666667, 0.70588235)
+        np.random.seed(seed)
         faulthandler.enable()
 
     def log_likelihood_func(self, x):
@@ -118,33 +120,34 @@ class EllipticalSliceSampler:
                 samples_accepted = samples[~np.all(samples == -10, axis=1)]
                 # Figure 1
                 ax[0].cla()
-                ax[0].plot(target_distribution, x_vector, '-', linewidth=2, markersize=1)
+                ax[0].plot(target_distribution, x_vector, '-', markersize=12, c=self.c_target)
                 #ax[0].plot(y_vector, samples, 'xk', linewidth=2, markersize=10)
-                ax[0].hist(samples_accepted[:, 0], bins=30, color='g', density=True, alpha=0.6, orientation="horizontal")
-                ax[0].set_title("Target Distribution & Histogram", fontsize=16)
-                ax[0].text(0.2, 8.5, 'Iteration: {} \nAccepted: {} \nRejected: {}'.format(i, self.accepted, self.rejected), fontsize=16)
+                ax[0].hist(samples[:, 0], bins=30, color='g', density=True, alpha=0.6, orientation="horizontal")
+                ax[0].set_title("target distribution & histogram", fontsize=16)
+                ax[0].text(0.2, 8.5, 'iteration: {} \naccepted: {} \nrejected: {}'.format(i, self.accepted, self.rejected), fontsize=16)
                 ax[0].set_xlim([-0.1, 0.5])
                 ax[0].invert_xaxis()
                 ax[0].set_ylim(x_range)
-                ax[0].set_xlabel('Y')
-                ax[0].set_ylabel('X')
-                ax[0].legend(['Target Distribution', 'Histogram'])
+                ax[0].set_xlabel('value')
+                ax[0].set_ylabel('sample')
+                ax[0].grid()
+                ax[0].legend(['target Distribution', 'histogram'])
 
                 increment_vector = np.linspace(0, len(samples_accepted), num=len(samples_accepted))
                 # Figure 2
                 ax[1].cla()
-                ax[1].plot(increment_vector, samples_accepted[:, 0], '-b', linewidth=2, markersize=10)
-                ax[1].set_title("Samples", fontsize=16)
+                ax[1].plot(increment_vector, samples_accepted[:, 0], '-', markersize=12, c=self.c_target)
+                ax[1].set_title("samples", fontsize=16)
                 ax[1].set_ylim(x_range)
                 ax[1].set_xlim([0, len(samples_accepted)])
-                ax[1].set_xlabel("Samples")
-                ax[1].set_ylabel("X")
-                ax[1].legend(['Samples'])
+                ax[1].set_xlabel("iteration")
+                ax[1].set_ylabel("sample")
+                ax[1].grid()
+                ax[1].legend(['samples'])
 
                 time.sleep(plot_timer)
                 figure.canvas.flush_events()
                 figure.canvas.draw()
-
             x_prior = sample[0]
         return samples
 
